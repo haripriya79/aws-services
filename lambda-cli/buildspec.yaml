@@ -1,0 +1,53 @@
+version: 0.2
+
+run-as: root
+
+env:
+#   shell: shell-tag
+#   variables:
+#     key: "value"
+#     key: "value"
+    parameter-store:
+        AWS_ACCESS_KEY_ID_PARAM: /CodeBuild/AWS_ACCESS_KEY_ID
+        AWS_SECRET_ACCESS_KEY_PARAM: /CodeBuild/AWS_SECRET_ACCESS_KEY
+
+        
+phases:
+  install:
+     run-as: root
+#     on-failure: ABORT | CONTINUE
+     runtime-versions:
+      python: 3.x
+#       runtime: version
+    
+     commands:
+      - pip install --upgrade pip
+      - pip install awscli
+            
+
+  build:
+     run-as: root
+#     on-failure: ABORT | CONTINUE
+     commands:
+       - zip -r function.zip .
+       - FUNC_NAME=$(aws lambda list-functions --query Functions[].[FunctionName] --output text)
+       - echo $FUNC_NAME
+       - for name in $FUNC_NAME;       
+         do 
+         echo function name is $name;
+         if [[ $name == *"LambdaFunction"* ]]; then
+         echo function name is $name;
+         aws lambda update-function-code  --function-name  $name  --zip-file fileb://function.zip;
+         fi 
+         done
+
+artifacts:
+  files:
+    - '**/*'
+
+# aws events put-rule --name LambdaRuleName --event-pattern "{\"source\":[\"aws.mediaconvert\"],\"detail-type\":[\"MediaConvert Job State Change\"],\"detail\":{\"status\":[\"COMPLETE\",\"ERROR\"],\"userMetadata\":{\"application\":[\"VOD\"]}}}"
+
+
+# aws events put-rule --name $LambdaRuleName --event-pattern "{\"source\":[\"aws.mediaconvert\"],\"detail-type\":[\"MediaConvert Job State Change\"],\"detail\":{\"status\":[\"COMPLETE\",\"ERROR\"],\"userMetadata\":{\"application\":[\"VOD\"]}}}"
+# aws lambda add-permission --function-name LambdaFunction1 --statement-id LambdaRuleName --action lambda:InvokeFunction --principal events.amazonaws.com --source-arn  "arn:aws:events:us-east-1:401789609362:rule/LambdaRuleName"
+# aws events put-targets --rule LambdaRuleName --targets file://targets.json

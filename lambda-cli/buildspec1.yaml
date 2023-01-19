@@ -1,0 +1,99 @@
+version: 0.2
+
+run-as: root
+
+env:
+#   shell: shell-tag
+#   variables:
+#     key: "value"
+#     key: "value"
+    parameter-store:
+        AWS_ACCESS_KEY_ID_PARAM: /CodeBuild/AWS_ACCESS_KEY_ID
+        AWS_SECRET_ACCESS_KEY_PARAM: /CodeBuild/AWS_SECRET_ACCESS_KEY
+
+        
+phases:
+  install:
+     run-as: root
+#     on-failure: ABORT | CONTINUE
+     runtime-versions:
+      python: 3.x
+#       runtime: version
+    
+     commands:
+      - pip install --upgrade pip
+      - pip install awscli
+            
+
+#       - command
+#   pre_build:
+#     run-as: Linux-user-name
+#     on-failure: ABORT | CONTINUE
+#     commands:
+#       - command
+#       - command
+#     finally:
+#       - command
+#       - command
+  build:
+     run-as: root
+#     on-failure: ABORT | CONTINUE
+     commands:
+       - zip function.zip index.js
+       - aws lambda create-function --function-name LambdaFunction1  --zip-file fileb://function.zip --handler index.handler --runtime nodejs14.x  --role arn:aws:iam::401789609362:role/service-role/myFunction-role-6zd7qpvy
+       - aws lambda add-permission --function-name LambdaFunction1  --action lambda:InvokeFunction --principal s3.amazonaws.com --source-arn arn:aws:s3:::ebs-web-app-bucket-06966 --statement-id 1
+       - aws s3api put-bucket-notification-configuration --bucket ebs-web-app-bucket-06966 --notification-configuration file://notification.json
+#     finally:
+#       - command
+#       - command
+#   post_build: 
+#     run-as: Linux-user-name
+#     on-failure: ABORT | CONTINUE
+#     commands:
+#       - command
+#       - command
+#     finally:
+#       - command
+#       - command
+# reports:
+#   report-group-name-or-arn:
+#     files:
+#       - location
+#       - location
+#     base-directory: location
+#     discard-paths: no | yes
+#     file-format: report-format
+artifacts:
+  files:
+    - '**/*'
+#     - location
+#   name: artifact-name
+#   discard-paths: no | yes
+#   base-directory: location
+#   exclude-paths: excluded paths
+#   enable-symlinks: no | yes
+#   s3-prefix: prefix
+#   secondary-artifacts:
+#     artifactIdentifier:
+#       files:
+#         - location
+#         - location
+#       name: secondary-artifact-name
+#       discard-paths: no | yes
+#       base-directory: location
+#     artifactIdentifier:
+#       files:
+#         - location
+#         - location
+#       discard-paths: no | yes
+#       base-directory: location
+# cache:
+#   paths:
+#     - path
+#     - path
+# aws events put-rule --name LambdaRuleName --event-pattern "{\"source\":[\"aws.mediaconvert\"],\"detail-type\":[\"MediaConvert Job State Change\"],\"detail\":{\"status\":[\"COMPLETE\",\"ERROR\"],\"userMetadata\":{\"application\":[\"VOD\"]}}}"
+
+
+# aws events put-rule --name $LambdaRuleName --event-pattern "{\"source\":[\"aws.mediaconvert\"],\"detail-type\":[\"MediaConvert Job State Change\"],\"detail\":{\"status\":[\"COMPLETE\",\"ERROR\"],\"userMetadata\":{\"application\":[\"VOD\"]}}}"
+# aws lambda add-permission --function-name LambdaFunction1 --statement-id LambdaRuleName --action lambda:InvokeFunction --principal events.amazonaws.com --source-arn  "arn:aws:events:us-east-1:401789609362:rule/LambdaRuleName"
+# aws events put-targets --rule LambdaRuleName --targets file://targets.json

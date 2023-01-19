@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  InstanceType:
+    Description: Enter instance size. Default is .
+    Type: String
+    Default: t2.micro
+  AMI:
+    Description: Enter the AMI
+    Type: String
+    Default: ami-052cef05d01020f1d 
+  AvailabilityZone:
+    Description: Enter the availibility Zone
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-east-1a
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: Ubuntu target vpc
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: keyname
+          Value: value
+  AttachGatewayToVPC:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref InternetGateway
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.0.0/24
+      Tags:
+        - Key: Name
+          Value: subnetA
+  RouteTabele:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: RouteTable
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: "testkey"
+  
+      ImageId: !Ref AMI
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref SubnetA
+      Tags:
+        - Key: Name
+          Value: Ubuntu
+
+Outputs:
+  PublicIp:
+    Description: Server public Ip
+    Value:
+      Fn::GetAtt:
+        - MyEC2Instance
+        - PublicIp
+    
+

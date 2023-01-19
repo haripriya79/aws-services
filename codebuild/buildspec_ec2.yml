@@ -1,0 +1,128 @@
+version: 0.2
+
+run-as: root
+
+env:
+#   shell: shell-tag
+#   variables:
+#     key: "value"
+#     key: "value"
+    parameter-store:
+        AWS_ACCESS_KEY_ID_PARAM: /CodeBuild/AWS_ACCESS_KEY_ID
+        AWS_SECRET_ACCESS_KEY_PARAM: /CodeBuild/AWS_SECRET_ACCESS_KEY
+#   exported-variables:
+#     - variable
+#     - variable
+#   secrets-manager:
+#     key: secret-id:json-key:version-stage:version-id
+#   git-credential-helper: no | yes
+
+# proxy:
+#   upload-artifacts: no | yes
+#   logs: no | yes
+
+# batch:
+#   fast-fail: false | true
+#   # build-list:
+#   # build-matrix:
+#   # build-graph:
+        
+phases:
+  install:
+     run-as: root
+#     on-failure: ABORT | CONTINUE
+     runtime-versions:
+      python: 3.x
+#       runtime: version
+    
+     commands:
+      - pip install --upgrade pip
+      - pip install awscli
+      - aws --version
+      - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_PARAM
+      - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY_PARAM
+      
+     finally:
+       - echo you did a great job
+#       - command
+#   pre_build:
+#     run-as: Linux-user-name
+#     on-failure: ABORT | CONTINUE
+#     commands:
+#       - command
+#       - command
+#     finally:
+#       - command
+#       - command
+  build:
+     run-as: root
+#     on-failure: ABORT | CONTINUE
+     commands:
+       - echo creating the vpc
+       - VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.0.4/16 --query Vpc.VpcId --output text)
+       - ech vpc id is $VPC_ID
+       - echo creating the subnet
+       - SUBNET_ID=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.1.4/24 --query Subnet.SubnetId --output text)
+       - echo subnet id is $SUBNET_ID
+       - echo creating the internet gateway
+       - IGW=$(aws ec2 create-internet-gateway --query InternetGateway.InternetGatewayId --output text)
+       - aws ec2 attach-internet-gateway --vpc-id $VPC_ID --internet-gateway-id $IGW
+       - echo attached igw to vpc
+       - echo creating the routeble to attach to subnet
+       - ROUTE_TABLE=$(aws ec2 create-route-table --vpc-id $VPC_ID --query RouteTable.RouteTableId --output text)
+       - aws ec2 create-route --route-table-id $ROUTE_TABLE --destination-cidr-block 0.0.0.0/0 --gateway-id $IGW
+       - aws ec2 associate-route-table  --subnet-id $SUBNET_ID --route-table-id $ROUTE_TABLE
+       - echo attached the route table to subnet
+       - echo creating the ec2 instance
+       - aws ec2 create-key-pair --key-name MyKeyPair --query "KeyMaterial" --output text > MyKeyPair.pem
+       - chmod 400 MyKeyPair.pem
+       - aws ec2 run-instances --image-id ami-033b95fb8079dc481 --count 1 --instance-type t2.micro --key-name MyKeyPair  --subnet-id $SUBNET_ID --query > instance.json
+       - echo created the ec2 instance
+#     finally:
+#       - command
+#       - command
+#   post_build:
+#     run-as: Linux-user-name
+#     on-failure: ABORT | CONTINUE
+#     commands:
+#       - command
+#       - command
+#     finally:
+#       - command
+#       - command
+# reports:
+#   report-group-name-or-arn:
+#     files:
+#       - location
+#       - location
+#     base-directory: location
+#     discard-paths: no | yes
+#     file-format: report-format
+artifacts:
+  files:
+    - '**/*'
+#     - location
+#   name: artifact-name
+#   discard-paths: no | yes
+#   base-directory: location
+#   exclude-paths: excluded paths
+#   enable-symlinks: no | yes
+#   s3-prefix: prefix
+#   secondary-artifacts:
+#     artifactIdentifier:
+#       files:
+#         - location
+#         - location
+#       name: secondary-artifact-name
+#       discard-paths: no | yes
+#       base-directory: location
+#     artifactIdentifier:
+#       files:
+#         - location
+#         - location
+#       discard-paths: no | yes
+#       base-directory: location
+# cache:
+#   paths:
+#     - path
+#     - path

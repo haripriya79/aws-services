@@ -1,0 +1,8 @@
+{
+    "LambdaFunctionConfigurations": [{
+        "Id": "my-lambda-function-s3-event-configuration",
+        "LambdaFunctionArn": "arn:aws:lambda:us-east-1:401789609362:function:LambdaFunction1",
+        "Events": ["s3:ObjectCreated:Put"]
+
+    }]
+}
